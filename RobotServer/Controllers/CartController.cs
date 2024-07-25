@@ -1,5 +1,7 @@
 ﻿using AngularServer01.Classes;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -13,9 +15,33 @@ namespace AngularServer01.Controllers
     {
         // GET: api/<CartController>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public string Get()
         {
-            return new string[] { "value1", "value2" };
+
+            DataTable dt = new DataTable();
+            string connectionString =
+                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                using (SqlCommand command = new SqlCommand("CartSelectAll", connection))
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                // DJS: I have no idea how the following line of code works
+                // apparently there are *many* options available.
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+            string sJsonOutput = JsonConvert.SerializeObject(dt, jsonSerializerSettings);
+
+            return (sJsonOutput);
         }
 
         // GET api/<CartController>/5
@@ -65,10 +91,26 @@ namespace AngularServer01.Controllers
         {
         }
 
+        // DJS: need to update the Cart table with a valid UserID
+
         // DELETE api/<CartController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+            // code for deleting a product from the cart
+            string connectionString =
+                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                using (SqlCommand command = new SqlCommand("CartDeleteByCartID", connection))
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@CartID", id);
+                    command.ExecuteNonQuery();
+                }
+            }
+
         }
     }
 }
