@@ -2,22 +2,21 @@ USE [RobotShop]
 GO
 
 insert into dbo.Category
-(CategoryName)
+(CategoryID, CategoryName)
 values
-('Heads')
+(1, 'Heads')
 
 insert into dbo.Category
-(CategoryName)
+(CategoryID, CategoryName)
 values
-('Bases')
+(2, 'Bases')
 
 insert into dbo.Category
-(CategoryName)
+(CategoryID, CategoryName)
 values
-('Arms')
+(3, 'Arms')
 
 insert into dbo.Category
-(CategoryName)
+(CategoryID, CategoryName)
 values
-('Torsos')
-
+(4, 'Torsos')
