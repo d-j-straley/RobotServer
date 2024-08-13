@@ -10,7 +10,7 @@ INSERT INTO [dbo].[CartItem]
 	 (
 	 1,
 	 1,
-	 495.00,
+	 495.50,
 	 0.00
 	 )
 
