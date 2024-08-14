@@ -23,12 +23,20 @@ namespace AngularServer01.Controllers
                 @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                connection.Open();
-                using (SqlCommand command = new SqlCommand("CartSelectAll", connection))
+                //connection.Open();
+                using (SqlCommand command = new SqlCommand("CartItemSelectAllByUserID", connection))
                 {
                     command.CommandType = System.Data.CommandType.StoredProcedure;
+                    /*
+                     * DJS: this is a hack for now.  We need to get the UserID from the session
+                     * at the Client and pass it to the server.  For now, we are hardcoding the
+                     * UserID at the server just to make it work.
+                     */
+                    command.Parameters.AddWithValue("@UserID", 1);
+
                     using (SqlDataAdapter adapter = new SqlDataAdapter(command))
                     {
+                        connection.Open();
                         adapter.Fill(dt);
                     }
                 }
