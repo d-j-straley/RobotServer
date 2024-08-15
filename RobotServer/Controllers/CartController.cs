@@ -93,7 +93,7 @@ namespace AngularServer01.Controllers
 
 
         [HttpPost]
-        // Create a version of POST which receives DTO variablees trough the Body
+        // Create a version of POST which receives DTO variablees through the Body
         public int CartItemInsert([FromBody] CartItemInsert incoming)
         {
             int nRetVal = this.CartItemInsert(incoming.UserID, incoming.ProductID);
@@ -101,13 +101,13 @@ namespace AngularServer01.Controllers
         }
 
        
-       // We're going to add a new item into the Cart  
+        // We're going to add a new item into the Cart
+        // Create a version of POST which receives incoming variables through the URL
         // POST api/<CartController>/1/1
         [HttpPost("{nUserID}/{nProductID}")]
         public int CartItemInsert(int nUserID, int nProductID )
         {
             int nNewCartItemID = 0;
-            // insert new product into the database via the CatalogInsert stored procedure
             using (SqlConnection connection = new SqlConnection(_sConnectionString))
             {
                 using (SqlCommand command = new SqlCommand("CartItemInsert", connection))
@@ -136,12 +136,11 @@ namespace AngularServer01.Controllers
         {
         }
 
-        // We are removing one specif item from the cart here
+        // We are removing one specific item from the cart here
         // DELETE api/<CartController>/1/1
         [HttpDelete("{nUserID}/{nProductID}")]
         public void CartItemDelete(int nUserID, int nProductID)
         {
-            // code for deleting a product from the cart
             using (SqlConnection connection = new SqlConnection(_sConnectionString))
             {
                 using (SqlCommand command = new SqlCommand("CartItemDeleteByUserID-ProductID", connection))
@@ -153,7 +152,6 @@ namespace AngularServer01.Controllers
                     command.ExecuteNonQuery();
                 }
             }
-
         }
     }
 }
