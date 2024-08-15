@@ -14,6 +14,8 @@ namespace AngularServer01.Controllers
     [ApiController]
     public class RobotCatalogController : ControllerBase
     {
+        private string _sConnectionString = @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
+
         // GET: api/<RobotCatalogController>
         /* Access SQL Server via Stored Procedure
          Use DataTable to store the result
@@ -24,16 +26,14 @@ namespace AngularServer01.Controllers
         {
 
             DataTable dt = new DataTable();
-            string connectionString =
-                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
             {
-                connection.Open();
                 using (SqlCommand command = new SqlCommand("ProductSelectAll", connection))
                 {
                     command.CommandType = System.Data.CommandType.StoredProcedure;
                     using (SqlDataAdapter adapter = new SqlDataAdapter(command))
                     {
+                        connection.Open();
                         adapter.Fill(dt);
                     }
                 }
@@ -62,9 +62,7 @@ namespace AngularServer01.Controllers
         public int Post([FromBody] Product newproduct)
         {
             // insert new product into the database via the CatalogInsert stored procedure
-            string connectionString =
-                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
             {
                 connection.Open();
                 using (SqlCommand command = new SqlCommand("ProductInsert", connection))

@@ -4,6 +4,7 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using System.Data;
 using System.Data.SqlClient;
+using RobotServer.Classes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -13,15 +14,15 @@ namespace AngularServer01.Controllers
     [ApiController]
     public class CartController : ControllerBase
     {
+        private string _sConnectionString = @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
+
+        // DJS: this is the default GET method for the CartController; in reality, this should never be called
         // GET: api/<CartController>
         [HttpGet]
         public string Get()
         {
-
             DataTable dt = new DataTable();
-            string connectionString =
-                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
             {
                 //connection.Open();
                 using (SqlCommand command = new SqlCommand("CartItemSelectAllByUserID", connection))
@@ -52,45 +53,81 @@ namespace AngularServer01.Controllers
             return (sJsonOutput);
         }
 
+        // We're going to pull the CartItems for the specified UserID
         // GET api/<CartController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{nUserID}")]
+        public string Get(int nUserID)
         {
-            return "value";
-        }
+            DataTable dt = new DataTable();
 
-        // POST api/<CartController>
-        [HttpPost]
-        public int Post([FromBody] Product newproduct )
-        {
-            int nCartID = 0;
-            // insert new product into the database via the CatalogInsert stored procedure
-            string connectionString =
-                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            // Do a sanity check on input variable
+            if (nUserID < 1)
             {
-                connection.Open();
-                using (SqlCommand command = new SqlCommand("CartInsert", connection))
+                return ("Invalid UserID");
+            }
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
+            {
+                //connection.Open();
+                using (SqlCommand command = new SqlCommand("CartItemSelectAllByUserID", connection))
                 {
                     command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.Parameters.AddWithValue("@ProductID", newproduct.ProductID);
-                    command.Parameters.AddWithValue("@CategoryID", newproduct.CategoryID);
-                    command.Parameters.AddWithValue("@Name", newproduct.Name);
-                    command.Parameters.AddWithValue("@Description", newproduct.Description);
-                    command.Parameters.AddWithValue("@ImageName", newproduct.ImageName);
-                    command.Parameters.AddWithValue("@Price", newproduct.Price);
-                    command.Parameters.AddWithValue("@Discount", newproduct.Discount);
+                    command.Parameters.AddWithValue("@UserID", nUserID);
 
-                    // retrieve the new CartID as an output parameter
-                    SqlParameter param = new SqlParameter("@NewCartID", SqlDbType.Int);
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        connection.Open();
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                // DJS: I have no idea how the following line of code works
+                // apparently there are *many* options available.
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+            string sJsonOutput = JsonConvert.SerializeObject(dt, jsonSerializerSettings);
+
+            return (sJsonOutput);
+        }
+
+
+        [HttpPost]
+        // Create a version of POST which receives DTO variablees trough the Body
+        public int CartItemInsert([FromBody] CartItemInsert incoming)
+        {
+            int nRetVal = this.CartItemInsert(incoming.UserID, incoming.ProductID);
+            return nRetVal;
+        }
+
+       
+       // We're going to add a new item into the Cart  
+        // POST api/<CartController>/1/1
+        [HttpPost("{nUserID}/{nProductID}")]
+        public int CartItemInsert(int nUserID, int nProductID )
+        {
+            int nNewCartItemID = 0;
+            // insert new product into the database via the CatalogInsert stored procedure
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
+            {
+                using (SqlCommand command = new SqlCommand("CartItemInsert", connection))
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@UserID", nUserID);
+                    command.Parameters.AddWithValue("@ProductID", nProductID);
+
+                    // retrieve the new CartItemID as an output parameter.  The Client
+                    // probably doesn't even need this value, but we'll return it anyway.
+                    SqlParameter param = new SqlParameter("@NewCartItemID", SqlDbType.Int);
                     param.Direction = ParameterDirection.Output;
                     command.Parameters.Add(param);
 
+                    connection.Open();
                     command.ExecuteNonQuery();
-                    nCartID = (int)param.Value;
+                    nNewCartItemID = (int)param.Value;
                 }
             }
-            return nCartID;
+            return nNewCartItemID;
         }
 
         // PUT api/<CartController>/5
@@ -99,22 +136,20 @@ namespace AngularServer01.Controllers
         {
         }
 
-        // DJS: need to update the Cart table with a valid UserID
-
-        // DELETE api/<CartController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        // We are removing one specif item from the cart here
+        // DELETE api/<CartController>/1/1
+        [HttpDelete("{nUserID}/{nProductID}")]
+        public void CartItemDelete(int nUserID, int nProductID)
         {
             // code for deleting a product from the cart
-            string connectionString =
-                @"Server=(localdb)\MSSQLLocalDB ;Database=RobotShop;Trusted_Connection=True;";
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
             {
-                connection.Open();
-                using (SqlCommand command = new SqlCommand("CartDeleteByCartID", connection))
+                using (SqlCommand command = new SqlCommand("CartItemDeleteByUserID-ProductID", connection))
                 {
                     command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.Parameters.AddWithValue("@CartID", id);
+                    command.Parameters.AddWithValue("@UserID", nUserID);
+                    command.Parameters.AddWithValue("@ProductID", nProductID);
+                    connection.Open();
                     command.ExecuteNonQuery();
                 }
             }
