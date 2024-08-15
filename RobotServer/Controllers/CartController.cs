@@ -92,6 +92,47 @@ namespace AngularServer01.Controllers
         }
 
 
+        // We're going to pull out the Products with all of the
+        // relevant details which are associated with the CartItems
+        // (i.e. the items in the cart) for the specified UserID
+        // GET api/<CartController>/5
+        [HttpGet("ProductsInCart/{nUserID}")]
+        public string GetProductsInCart(int nUserID)
+        {
+            DataTable dt = new DataTable();
+
+            // Do a sanity check on input variable
+            if (nUserID < 1)
+            {
+                return ("Invalid UserID");
+            }
+            using (SqlConnection connection = new SqlConnection(_sConnectionString))
+            {
+                //connection.Open();
+                using (SqlCommand command = new SqlCommand("ProductsInCartSelectAllByUserID", connection))
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@UserID", nUserID);
+
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        connection.Open();
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                // DJS: I have no idea how the following line of code works
+                // apparently there are *many* options available.
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+            string sJsonOutput = JsonConvert.SerializeObject(dt, jsonSerializerSettings);
+
+            return (sJsonOutput);
+        }
+
+
         [HttpPost]
         // Create a version of POST which receives DTO variablees through the Body
         public int CartItemInsert([FromBody] CartItemInsert incoming)
